@@ -1,123 +1,216 @@
--- Fake Kick Message Script for Roblox
--- Compatible with loadstring execution
--- Place this in ServerScriptService, StarterPlayerScripts, or execute via loadstring
+-- Fake Ban Message Script - Loadstring Compatible
+-- Execute with: loadstring(game:HttpGet("your_url_here"))()
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Get the local player
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Function to create the fake kick GUI
-local function createFakeKickGUI()
-    -- Create ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "FakeKickGUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.DisplayOrder = 10
-    screenGui.Parent = playerGui
+-- Check if GUI already exists and remove it
+if playerGui:FindFirstChild("FakeBanGui") then
+    playerGui.FakeBanGui:Destroy()
+end
+
+-- Create the fake ban GUI
+local function createFakeBanGui()
+    -- Main ScreenGui
+    local banGui = Instance.new("ScreenGui")
+    banGui.Name = "FakeBanGui"
+    banGui.ResetOnSpawn = false
+    banGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    -- Create main frame (background)
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(1, 0, 1, 0)
-    mainFrame.Position = UDim2.new(0, 0, 0, 0)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    mainFrame.BorderSizePixel = 0
-    mainFrame.Parent = screenGui
+    -- Dark background overlay
+    local overlay = Instance.new("Frame")
+    overlay.Name = "Overlay"
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.Position = UDim2.new(0, 0, 0, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(57, 59, 61)
+    overlay.BorderSizePixel = 0
+    overlay.Parent = banGui
     
-    -- Create kick message frame
-    local kickFrame = Instance.new("Frame")
-    kickFrame.Name = "KickFrame"
-    kickFrame.Size = UDim2.new(0, 400, 0, 300)
-    kickFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-    kickFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    kickFrame.BorderSizePixel = 2
-    kickFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    kickFrame.Parent = mainFrame
+    -- Main ban message frame
+    local banFrame = Instance.new("Frame")
+    banFrame.Name = "BanFrame"
+    banFrame.Size = UDim2.new(0, 500, 0, 350)
+    banFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
+    banFrame.BackgroundColor3 = Color3.fromRGB(44, 47, 51)
+    banFrame.BorderSizePixel = 0
+    banFrame.Parent = overlay
     
-    -- Add corner radius to kick frame
+    -- Frame corner rounding
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = kickFrame
+    corner.Parent = banFrame
     
-    -- Create title label
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(1, 0, 0, 50)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    titleLabel.BorderSizePixel = 0
-    titleLabel.Text = "Disconnected"
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextScaled = true
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.Parent = kickFrame
+    -- Frame border
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(220, 53, 69)
+    border.Thickness = 2
+    border.Parent = banFrame
     
-    -- Add corner to title
-    local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 8)
-    titleCorner.Parent = titleLabel
+    -- Roblox logo text
+    local logoText = Instance.new("TextLabel")
+    logoText.Name = "LogoText"
+    logoText.Size = UDim2.new(1, 0, 0, 40)
+    logoText.Position = UDim2.new(0, 0, 0, 10)
+    logoText.BackgroundTransparency = 1
+    logoText.Text = "ROBLOX"
+    logoText.TextColor3 = Color3.fromRGB(255, 107, 107)
+    logoText.TextSize = 24
+    logoText.Font = Enum.Font.SourceSansBold
+    logoText.Parent = banFrame
     
-    -- Create message label
-    local messageLabel = Instance.new("TextLabel")
-    messageLabel.Name = "MessageLabel"
-    messageLabel.Size = UDim2.new(1, -20, 1, -100)
-    messageLabel.Position = UDim2.new(0, 10, 0, 60)
-    messageLabel.BackgroundTransparency = 1
-    messageLabel.Text = "You have been kicked from this game:\n\nReason: Suspicious activity detected\n\nReconnect (Error Code: 267)"
-    messageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    messageLabel.TextScaled = true
-    messageLabel.Font = Enum.Font.SourceSans
-    messageLabel.TextWrapped = true
-    messageLabel.Parent = kickFrame
+    -- Ban title
+    local banTitle = Instance.new("TextLabel")
+    banTitle.Name = "BanTitle"
+    banTitle.Size = UDim2.new(1, -20, 0, 30)
+    banTitle.Position = UDim2.new(0, 10, 0, 60)
+    banTitle.BackgroundTransparency = 1
+    banTitle.Text = "You have been kicked by this experience or its moderators."
+    banTitle.TextColor3 = Color3.fromRGB(255, 71, 87)
+    banTitle.TextSize = 18
+    banTitle.Font = Enum.Font.SourceSansBold
+    banTitle.TextWrapped = true
+    banTitle.Parent = banFrame
     
-    -- Create "Leave" button (fake)
-    local leaveButton = Instance.new("TextButton")
-    leaveButton.Name = "LeaveButton"
-    leaveButton.Size = UDim2.new(0, 100, 0, 30)
-    leaveButton.Position = UDim2.new(0.5, -50, 1, -40)
-    leaveButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    leaveButton.BorderSizePixel = 1
-    leaveButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    leaveButton.Text = "Leave"
-    leaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    leaveButton.TextScaled = true
-    leaveButton.Font = Enum.Font.SourceSans
-    leaveButton.Parent = kickFrame
+    -- Moderation message label
+    local modLabel = Instance.new("TextLabel")
+    modLabel.Name = "ModLabel"
+    modLabel.Size = UDim2.new(1, -20, 0, 25)
+    modLabel.Position = UDim2.new(0, 10, 0, 100)
+    modLabel.BackgroundTransparency = 1
+    modLabel.Text = "Moderation message:"
+    modLabel.TextColor3 = Color3.fromRGB(220, 221, 222)
+    modLabel.TextSize = 16
+    modLabel.Font = Enum.Font.SourceSansBold
+    modLabel.TextXAlignment = Enum.TextXAlignment.Left
+    modLabel.Parent = banFrame
     
-    -- Add corner to button
+    -- Ban reason box
+    local reasonBox = Instance.new("Frame")
+    reasonBox.Name = "ReasonBox"
+    reasonBox.Size = UDim2.new(1, -40, 0, 120)
+    reasonBox.Position = UDim2.new(0, 20, 0, 135)
+    reasonBox.BackgroundColor3 = Color3.fromRGB(64, 68, 75)
+    reasonBox.BorderSizePixel = 0
+    reasonBox.Parent = banFrame
+    
+    -- Reason box corner
+    local reasonCorner = Instance.new("UICorner")
+    reasonCorner.CornerRadius = UDim.new(0, 5)
+    reasonCorner.Parent = reasonBox
+    
+    -- Reason box left border
+    local reasonBorder = Instance.new("Frame")
+    reasonBorder.Size = UDim2.new(0, 4, 1, 0)
+    reasonBorder.Position = UDim2.new(0, 0, 0, 0)
+    reasonBorder.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+    reasonBorder.BorderSizePixel = 0
+    reasonBorder.Parent = reasonBox
+    
+    -- Ban reason text
+    local banReason = Instance.new("TextLabel")
+    banReason.Name = "BanReason"
+    banReason.Size = UDim2.new(1, -20, 1, -20)
+    banReason.Position = UDim2.new(0, 15, 0, 10)
+    banReason.BackgroundTransparency = 1
+    banReason.Text = "You have been permanently banned for Duping/Owning an illegal duplicate of 5190.02 kg Honeysuckle Plant.\n\nuuid: {9fdae24-3b3c-4758-bbe5-3a06e97e99e1}\n(Error Code: 267)"
+    banReason.TextColor3 = Color3.fromRGB(220, 221, 222)
+    banReason.TextSize = 14
+    banReason.Font = Enum.Font.SourceSans
+    banReason.TextXAlignment = Enum.TextXAlignment.Left
+    banReason.TextYAlignment = Enum.TextYAlignment.Top
+    banReason.TextWrapped = true
+    banReason.Parent = reasonBox
+    
+    -- OK button
+    local okButton = Instance.new("TextButton")
+    okButton.Name = "OKButton"
+    okButton.Size = UDim2.new(0, 100, 0, 35)
+    okButton.Position = UDim2.new(0.5, -50, 1, -50)
+    okButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+    okButton.Text = "OK"
+    okButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    okButton.TextSize = 16
+    okButton.Font = Enum.Font.SourceSansBold
+    okButton.Parent = banFrame
+    
+    -- OK button corner
     local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 4)
-    buttonCorner.Parent = leaveButton
+    buttonCorner.CornerRadius = UDim.new(0, 5)
+    buttonCorner.Parent = okButton
     
-    -- Create close instruction (hidden initially)
-    local closeInstruction = Instance.new("TextLabel")
-    closeInstruction.Name = "CloseInstruction"
-    closeInstruction.Size = UDim2.new(0, 300, 0, 30)
-    closeInstruction.Position = UDim2.new(0.5, -150, 1, 20)
-    closeInstruction.BackgroundTransparency = 1
-    closeInstruction.Text = "Press ESC or click anywhere to close this fake message"
-    closeInstruction.TextColor3 = Color3.fromRGB(200, 200, 200)
-    closeInstruction.TextScaled = true
-    closeInstruction.Font = Enum.Font.SourceSans
-    closeInstruction.TextTransparency = 1
-    closeInstruction.Parent = mainFrame
+    return banGui, okButton, banFrame
+end
+
+-- Function to show the fake ban message
+local function showFakeBan()
+    -- Create the GUI
+    local banGui, okButton, banFrame = createFakeBanGui()
+    banGui.Parent = playerGui
     
-    -- Animate the kick frame appearing
-    kickFrame.Size = UDim2.new(0, 0, 0, 0)
+    -- Start with frame invisible
+    banFrame.Size = UDim2.new(0, 0, 0, 0)
+    banFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    
+    -- Animate the ban frame appearing
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(kickFrame, tweenInfo, {Size = UDim2.new(0, 400, 0, 300)})
+    local tween = TweenService:Create(banFrame, tweenInfo, {
+        Size = UDim2.new(0, 500, 0, 350),
+        Position = UDim2.new(0.5, -250, 0.5, -175)
+    })
     tween:Play()
     
-    -- Show close instruction after animation
-    tween.Completed:Connect(function()
-        local instructionTween = TweenService:Create(closeInstruction, TweenInfo.new(0.3), {TextTransparency = 0})
-        instructionTween:Play()
+    -- Add button hover effect
+    okButton.MouseEnter:Connect(function()
+        local hoverTween = TweenService:Create(okButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(185, 45, 58)
+        })
+        hoverTween:Play()
     end)
     
-    -- Function to close the fake kick message
-    local function closeFakeKick()
-        local closeTween = TweenService:Create(kickFrame, TweenInf
+    okButton.MouseLeave:Connect(function()
+        local leaveTween = TweenService:Create(okButton, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+        })
+        leaveTween:Play()
+    end)
+    
+    -- Handle button click
+    okButton.MouseButton1Click:Connect(function()
+        -- Fade out animation
+        local fadeOut = TweenService:Create(banGui.Overlay, TweenInfo.new(0.3), {
+            BackgroundTransparency = 1
+        })
+        local frameOut = TweenService:Create(banFrame, TweenInfo.new(0.3), {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0)
+        })
+        
+        fadeOut:Play()
+        frameOut:Play()
+        
+        -- Remove GUI after animation
+        fadeOut.Completed:Connect(function()
+            banGui:Destroy()
+        end)
+    end)
+    
+    -- Auto-close after 15 seconds if player doesn't click
+    task.spawn(function()
+        task.wait(15)
+        if banGui and banGui.Parent then
+            banGui:Destroy()
+        end
+    end)
+end
+
+-- Execute the fake ban immediately
+showFakeBan()
+
+-- Optional: Make it available globally
+_G.ShowFakeBan = showFakeBan
+
+print("Fake ban message loaded successfully!")
