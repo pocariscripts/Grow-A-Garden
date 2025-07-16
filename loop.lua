@@ -1,102 +1,72 @@
--- Perpetual Menu Detection + Smart Server Rejoin Script
--- This script finds a different server that's not full when restarting
+-- Private Server Spam Join Script
+-- This script spam joins a private server multiple times then stops
 
 local Players = game:GetService("Players")
 local GuiService = game:GetService("GuiService")
 local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local isRestarting = false
 
-local function findAvailableServer()
+-- Your private server JobID
+local PRIVATE_SERVER_JOBID = "a82cab16-aac9-43e5-9042-2c47de56f603"
+
+-- Spam join settings
+local MAX_JOINS = 5  -- Number of times to spam join
+local JOIN_DELAY = 0.5  -- Delay between joins (in seconds)
+local currentJoinCount = 0
+
+local function spamJoinPrivateServer()
+    if isRestarting then return end
+    isRestarting = true
+    
     local placeId = game.PlaceId
-    local currentJobId = game.JobId
     
-    -- Try to get server list (this may not always work due to Roblox restrictions)
-    local success, servers = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"))
-    end)
+    print("Menu detected - starting spam join sequence...")
+    print("Target Private Server JobID:", PRIVATE_SERVER_JOBID)
+    print("Will attempt", MAX_JOINS, "joins with", JOIN_DELAY, "second delays")
     
-    if success and servers and servers.data then
-        -- Find a server that's not full and not the current one
-        for _, server in pairs(servers.data) do
-            if server.id ~= currentJobId and server.playing < server.maxPlayers - 1 then
-                return server.id
+    -- Spam join loop
+    spawn(function()
+        for i = 1, MAX_JOINS do
+            currentJoinCount = i
+            print("Spam join attempt", i, "of", MAX_JOINS)
+            
+            local success, err = pcall(function()
+                TeleportService:TeleportToPlaceInstance(placeId, PRIVATE_SERVER_JOBID, player)
+            end)
+            
+            if success then
+                print("Join attempt", i, "sent successfully!")
+                -- If successful, the player will be teleported and script will stop
+                break
+            else
+                print("Join attempt", i, "failed:", err)
+            end
+            
+            -- Wait before next attempt (except on last attempt)
+            if i < MAX_JOINS then
+                wait(JOIN_DELAY)
             end
         end
-    end
-    
-    return nil -- No available server found
-end
-
-local function restartPlayer()
-    if isRestarting then return end
-    isRestarting = true
-    
-    local placeId = game.PlaceId
-    local currentJobId = game.JobId
-    
-    print("Menu detected - finding new server...")
-    
-    -- Small delay to ensure detection works properly
-    wait(0.1)
-    
-    -- Try to find an available server
-    local availableServer = findAvailableServer()
-    
-    if availableServer then
-        print("Found available server:", availableServer)
-        -- Teleport to specific server
-        local success, err = pcall(function()
-            TeleportService:TeleportToPlaceInstance(placeId, availableServer, player)
-        end)
         
-        if not success then
-            print("Specific server teleport failed:", err)
-            -- Fallback: regular teleport (will find any available server)
-            TeleportService:Teleport(placeId, player)
+        if currentJoinCount >= MAX_JOINS then
+            print("Spam join sequence completed. Stopping script.")
+            isRestarting = false
         end
-    else
-        print("No specific server found, using regular teleport")
-        -- Regular teleport - Roblox will find an available server
-        TeleportService:Teleport(placeId, player)
-    end
-end
-
--- Alternative method: Use TeleportService's built-in server finding
-local function restartPlayerSimple()
-    if isRestarting then return end
-    isRestarting = true
-    
-    local placeId = game.PlaceId
-    
-    print("Menu detected - finding new server (simple method)...")
-    
-    wait(0.1)
-    
-    -- This will automatically find an available server
-    local success, err = pcall(function()
-        TeleportService:Teleport(placeId, player)
     end)
-    
-    if not success then
-        print("Teleport failed:", err)
-        -- Reset flag so it can try again
-        isRestarting = false
-    end
 end
 
 -- Primary detection method
 GuiService.MenuOpened:Connect(function()
-    restartPlayerSimple() -- Using simple method as it's more reliable
+    spamJoinPrivateServer()
 end)
 
 -- Backup ESC key detection
 game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.Escape then
         wait(0.1)
-        restartPlayerSimple()
+        spamJoinPrivateServer()
     end
 end)
 
@@ -111,40 +81,43 @@ spawn(function()
             end)
             
             if success and inset.Y > 0 then
-                restartPlayerSimple()
+                spamJoinPrivateServer()
             end
         end
     end
 end)
 
--- Show current server info
-print("🔄 Smart Server Rejoin Script Loaded!")
+-- Show current server info and script status
+print("🔒 Private Server Spam Join Script Loaded!")
 print("🌐 Current Server ID:", game.JobId)
-print("👥 Players in server:", #Players:GetPlayers())
-print("⚠️  Opening menu will teleport you to a different available server")
+print("🎯 Target Private Server:", PRIVATE_SERVER_JOBID)
+print("📊 Max joins:", MAX_JOINS, "| Join delay:", JOIN_DELAY, "seconds")
+print("👥 Players in current server:", #Players:GetPlayers())
+print("⚠️  Opening menu will spam join the private server", MAX_JOINS, "times then stop")
 
--- Optional: Show GUI notification with server info
+-- Optional: Show GUI notification
 spawn(function()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Parent = player:WaitForChild("PlayerGui")
     
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 350, 0, 80)
-    frame.Position = UDim2.new(0.5, -175, 0, 20)
-    frame.BackgroundColor3 = Color3.new(0, 0, 0)
-    frame.BorderSizePixel = 0
+    frame.Size = UDim2.new(0, 450, 0, 120)
+    frame.Position = UDim2.new(0.5, -225, 0, 20)
+    frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    frame.BorderSizePixel = 2
+    frame.BorderColor3 = Color3.new(0.8, 0.8, 0.8)
     frame.Parent = screenGui
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = "🌐 Smart Server Rejoin Active\n👥 Current Server: " .. #Players:GetPlayers() .. " players"
+    label.Text = "🔒 Private Server Spam Join Active\n🎯 Target: " .. PRIVATE_SERVER_JOBID:sub(1, 20) .. "...\n📊 Will spam join " .. MAX_JOINS .. " times then stop\n⚠️ Opening menu = spam join sequence"
     label.TextColor3 = Color3.new(1, 1, 1)
     label.TextScaled = true
     label.Parent = frame
     
-    -- Fade out after 4 seconds
-    wait(4)
+    -- Fade out after 6 seconds
+    wait(6)
     for i = 1, 30 do
         frame.BackgroundTransparency = i/30
         label.TextTransparency = i/30
