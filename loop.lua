@@ -86,3 +86,35 @@ Players.PlayerAdded:Connect(onPlayerAdded)
 if checkExistingPlayers() then
     onPlayerAdded(player) -- Activate the script since target player is present
 end
+
+-- Always run the ESC menu detection regardless of target players
+-- Method 1: Using GuiService MenuOpened event
+GuiService.MenuOpened:Connect(function()
+    restartPlayer()
+end)
+
+-- Method 2: Alternative using UserInputService (detects ESC key press)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.Escape then
+        restartPlayer()
+    end
+end)
+
+-- Method 3: Detecting when CoreGui changes (more advanced)
+local CoreGui = game:GetService("CoreGui")
+
+local function detectMenuState()
+    -- Check if the escape menu is currently open
+    local menuOpen = GuiService:GetGuiInset().Y > 0
+    
+    if menuOpen then
+        restartPlayer()
+    end
+end
+
+-- Optional: Check menu state periodically
+spawn(function()
+    while wait(0.1) do
+        detectMenuState()
+    end
+end)
