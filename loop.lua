@@ -43,38 +43,40 @@ local function checkExistingPlayers()
     return false
 end
 
+local method3Running = false
+
+local function startMethod3()
+    if method3Running then return end -- Prevent multiple instances
+    method3Running = true
+    
+    -- Method 3: Detecting when CoreGui changes (more advanced)
+    local CoreGui = game:GetService("CoreGui")
+
+    local function detectMenuState()
+        -- Check if the escape menu is currently open
+        local menuOpen = GuiService:GetGuiInset().Y > 0
+        
+        if menuOpen then
+            restartPlayer()
+        end
+    end
+
+    -- Method 3 runs continuously once activated
+    spawn(function()
+        while method3Running do
+            detectMenuState()
+            wait(0.1)
+        end
+    end)
+end
+
 -- Monitor for target players joining
 local function onPlayerAdded(newPlayer)
     if isTargetPlayer(newPlayer.Name) then
-        -- Method 1: Using GuiService MenuOpened event
-        GuiService.MenuOpened:Connect(function()
-            restartPlayer()
-        end)
-
-        -- Method 2: Alternative using UserInputService (detects ESC key press)
-        UserInputService.InputBegan:Connect(function(input, gameProcessed)
-            if not gameProcessed and input.KeyCode == Enum.KeyCode.Escape then
-                restartPlayer()
-            end
-        end)
-
-        -- Method 3: Detecting when CoreGui changes (more advanced)
-        local CoreGui = game:GetService("CoreGui")
-
-        local function detectMenuState()
-            -- Check if the escape menu is currently open
-            local menuOpen = GuiService:GetGuiInset().Y > 0
-            
-            if menuOpen then
-                restartPlayer()
-            end
-        end
-
-        -- Optional: Check menu state periodically
+        -- Wait 5 seconds before starting Method 3
         spawn(function()
-            while wait(0.1) do
-                detectMenuState()
-            end
+            wait(5)
+            startMethod3() -- Start Method 3 after 5 second delay
         end)
     end
 end
@@ -84,18 +86,23 @@ Players.PlayerAdded:Connect(onPlayerAdded)
 
 -- Check if any target players are already in the game when script starts
 if checkExistingPlayers() then
-    onPlayerAdded(player) -- Activate the script since target player is present
+    -- Wait 5 seconds before starting Method 3 for existing players
+    spawn(function()
+        wait(5)
+        startMethod3() -- Start Method 3 after 5 second delay
+    end)
 end
 
--- Always run the ESC menu detection regardless of target players
--- Method 1: Using GuiService MenuOpened event
+-- Method 1: Using GuiService MenuOpened event - triggers Method 3
 GuiService.MenuOpened:Connect(function()
+    startMethod3()
     restartPlayer()
 end)
 
--- Method 2: Alternative using UserInputService (detects ESC key press)
+-- Method 2: Alternative using UserInputService (detects ESC key press) - triggers Method 3
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.Escape then
+        startMethod3()
         restartPlayer()
     end
 end)
