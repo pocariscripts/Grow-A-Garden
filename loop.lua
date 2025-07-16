@@ -99,22 +99,3 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         restartPlayer()
     end
 end)
-
--- Method 3: Detecting when CoreGui changes (more advanced)
-local CoreGui = game:GetService("CoreGui")
-
-local function detectMenuState()
-    -- Check if the escape menu is currently open
-    local menuOpen = GuiService:GetGuiInset().Y > 0
-    
-    if menuOpen then
-        restartPlayer()
-    end
-end
-
--- Optional: Check menu state periodically
-spawn(function()
-    while wait(0.1) do
-        detectMenuState()
-    end
-end)
