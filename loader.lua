@@ -5,10 +5,6 @@ local TeleportService = game:GetService("TeleportService")
 
 local player = Players.LocalPlayer
 
--- Additional script that runs alongside
-game.workspace.DinoEvent:Destroy()
-game:GetService("ReplicatedStorage").Modules.UpdateService.ZenEvent.Parent = workspace
-
 local function restartPlayer()
     local jobId = "a82cab16-aac9-43e5-9042-2c47de56f603"
     local placeId = game.PlaceId
